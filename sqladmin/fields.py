@@ -265,6 +265,9 @@ class QuerySelectMultipleField(QuerySelectField):
         self._formdata = None
 
     def iter_choices(self) -> Generator[tuple[str, Any, bool, dict], None, None]:
+        if not isinstance(self.data, list):
+            self.data = [self.data]
+
         if self.data is not None:
             primary_keys = (
                 self.data
