@@ -275,7 +275,10 @@ class QuerySelectMultipleField(QuerySelectField):
                 else [str(get_object_identifier(m)) for m in self.data]
             )
             for pk, label in self._select_data:
-                yield (pk, self.get_label(label), pk in primary_keys, {})
+                if isinstance(label, str):
+                    yield (pk, label, str(pk) == primary_key, {})
+                else:
+                    yield (pk, self.get_label(label), pk in primary_keys, {})
 
     def process_formdata(self, valuelist: list[str]) -> None:
         self._formdata = list(set(valuelist))
