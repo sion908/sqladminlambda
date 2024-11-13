@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 
 <head>
   <meta charset="UTF-8">
@@ -10,6 +10,9 @@
   <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/select2.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/flatpickr.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/main.css') }}">
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.1/dist/amazon-cognito-identity.min.js"></script>
   {% if admin.favicon_url %}
   <link rel="icon" href="{{ admin.favicon_url }}">
   {% endif %}
@@ -32,8 +35,38 @@
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/select2.full.min.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/flatpickr.min.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/main.js') }}"></script>
+  {# <script type="text/javascript" src="{{ url_for('admin:statics', path='js/cognito-auth.js') }}"></script> #}
   {% block tail %}
   {% endblock %}
+  <script>
+    // 環境変数やサーバーサイドから渡された設定を使用
+    const cognitoConfig = {
+      userPoolId: '{{ cognito_settings.COGNITO_ADMIN_USER_POOL_ID }}',
+      clientId: '{{ cognito_settings.COGNITO_ADMIN_CLIENT_ID }}',
+      region: '{{ cognito_settings.COGNITO_ADMIN_REGION }}'
+    };
+
+    // 認証マネージャーの初期化
+    const auth = new CognitoAuthManager(cognitoConfig);
+
+    // セッション期限切れイベントのハンドリング
+    document.body.addEventListener('sessionExpired', () => {
+      window.location.href = '/login';
+    });
+
+    // ログアウトイベントのハンドリング
+    document.body.addEventListener('userSignedOut', () => {
+      window.location.href = '/login';
+    });
+
+    // HTMX固有のイベントハンドリング
+    htmx.on('htmx:afterSettle', async () => {
+      // ページ更新後のセッション状態チェック
+      if (!await auth.isSessionValid()) {
+        window.location.href = '/login';
+      }
+    });
+  </script>
 </body>
 
 </html>

@@ -1,0 +1,63 @@
+{% extends "sqladmin/base.html" %}
+{% block body %}
+<div class="d-flex align-items-center justify-content-center vh-100">
+  <form id="loginForm" class="col-lg-6 col-md-6 card card-md">
+    <div class="card-body">
+      <h2 class="card-title text-center mb-4">Login to {{ admin.title }}</h2>
+      
+      <div id="login-alert" class="alert alert-danger d-none" role="alert"></div>
+      
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input id="username" 
+               name="username" 
+               type="text" 
+               class="form-control" 
+               placeholder="Enter username"
+               autocomplete="off"
+               required>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label">Password</label>
+        <div class="input-group input-group-flat">
+          <input id="password"
+                 name="password" 
+                 type="password" 
+                 class="form-control" 
+                 placeholder="Password" 
+                 autocomplete="off"
+                 required>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" class="btn btn-primary w-100">
+          <span>Login</span>
+          <span id="login-spinner" 
+                class="spinner-border spinner-border-sm ms-2 d-none" 
+                role="status">
+            <span class="visually-hidden">Loading...</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- External Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.1/dist/amazon-cognito-identity.min.js"></script>
+<script src="{{ url_for('admin:statics', path='js/cognito-auth.js') }}"></script>
+<script src="{{ url_for('admin:statics', path='js/login-form.js') }}"></script>
+<script src="{{ url_for('admin:statics', path='js/htmx-auth.js') }}"></script>
+
+<!-- Initialize Login Form -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    new LoginFormManager('loginForm', {
+        userPoolId: '{{ cognito_settings.COGNITO_ADMIN_USER_POOL_ID }}',
+        clientId: '{{ cognito_settings.COGNITO_ADMIN_CLIENT_ID }}'
+    }{% if is_local %}, true{% endif %});
+});
+</script>
+{% endblock %}

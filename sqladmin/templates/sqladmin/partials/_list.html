@@ -1,0 +1,338 @@
+{# {% extends "sqladmin/layout.html" %} #}
+{# {% block content %} #}
+<div class="col-12" id="admin-list-container">
+  <div class="card">
+    {# ヘッダー部分 #}
+    <div class="card-header">
+      <h3 class="card-title">{{ model_view.name_plural | escape }}</h3>
+      <div class="ms-auto">
+        {# エクスポート機能 #}
+        {% if model_view.can_export %}
+          {% if model_view.export_types | length > 1 %}
+            <div class="ms-3 d-inline-block dropdown">
+              <button type="button" class="btn btn-secondary dropdown-toggle" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Export
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                {% for export_type in model_view.export_types %}
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('admin:export', identity=model_view.identity, export_type=export_type) | escape }}">
+                      {{ export_type | upper | escape }}
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% elif model_view.export_types | length == 1 %}
+            <div class="ms-3 d-inline-block">
+              <a href="{{ url_for('admin:export', identity=model_view.identity, export_type=model_view.export_types[0]) | escape }}"
+                 class="btn btn-secondary">
+                Export
+              </a>
+            </div>
+          {% endif %}
+        {% endif %}
+
+        {# 新規作成ボタン #}
+        {% if model_view.can_create %}
+          <div class="ms-3 d-inline-block">
+            <a hx-get="{{ url_for('admin:create', identity=model_view.identity) | escape }}"
+               hx-target="#main-container"
+               hx-push-url="true"
+               class="btn btn-primary"
+               role="button">
+              <i class="fa-solid fa-plus me-1" aria-hidden="true"></i>
+              <span>New {{ model_view.name | escape }}</span>
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# 検索とアクション部分 #}
+    <div class="card-body border-bottom py-3">
+      <div class="d-flex justify-content-between">
+        {# アクションドロップダウン #}
+        <div class="dropdown col-4">
+          <button class="btn btn-light dropdown-toggle" 
+                  type="button" 
+                  id="actionDropdown" 
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  {% if not model_view.can_delete and not model_view._custom_actions_in_list %}disabled{% endif %}>
+            Actions
+          </button>
+          {% if model_view.can_delete or model_view._custom_actions_in_list %}
+            <div class="dropdown-menu" aria-labelledby="actionDropdown">
+              {% if model_view.can_delete %}
+                <button class="dropdown-item" 
+                        type="button"
+                        id="action-delete" 
+                        data-bs-toggle="modal"
+                        data-bs-target="#modal-delete"
+                        data-name="{{ model_view.name | escape }}"
+                        data-url="{{ url_for('admin:delete', identity=model_view.identity) | escape }}">
+                  Delete selected items
+                </button>
+              {% endif %}
+              {% for custom_action, label in model_view._custom_actions_in_list.items() %}
+                {% if custom_action in model_view._custom_actions_confirmation %}
+                  <button class="dropdown-item"
+                          type="button"
+                          id="action-customconfirm-{{ custom_action | escape }}"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modal-confirmation-{{ custom_action | escape }}">
+                    {{ label | escape }}
+                  </button>
+                {% else %}
+                  <button class="dropdown-item"
+                          type="button"
+                          id="action-custom-{{ custom_action | escape }}"
+                          data-url="{{ model_view._url_for_action(request, custom_action) | escape }}">
+                    {{ label | escape }}
+                  </button>
+                {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        {# 検索フォーム #}
+        {% if model_view.column_searchable_list %}
+          <div class="col-md-4">
+            <form class="input-group" id="search-form" hx-get="{{ request.url }}" hx-target="#main-container">
+              <input type="text"
+                     id="search-input"
+                     name="search"
+                     class="form-control"
+                     placeholder="Search: {{ model_view.search_placeholder() | escape }}"
+                     value="{{ request.query_params.get('search', '') | escape }}"
+                     aria-label="Search">
+              <button class="btn btn-outline-secondary" type="submit" id="search-button">
+                <i class="fa-solid fa-search" aria-hidden="true"></i>
+                <span class="visually-hidden">Search</span>
+              </button>
+              <button class="btn btn-outline-secondary"
+                      type="button"
+                      id="search-reset"
+                      {% if not request.query_params.get('search') %}disabled{% endif %}
+                      hx-get="{{ request.url.remove_query_params(['search']) }}"
+                      hx-target="#main-container">
+                <i class="fa-solid fa-times" aria-hidden="true"></i>
+                <span class="visually-hidden">Clear search</span>
+              </button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# テーブル部分 #}
+    <div class="table-responsive">
+      <table class="table card-table table-vcenter text-nowrap">
+        <thead>
+          <tr>
+            <th class="w-1">
+              <input class="form-check-input m-0 align-middle"
+                     type="checkbox"
+                     id="select-all"
+                     aria-label="Select all items">
+            </th>
+            <th class="w-1"><span class="visually-hidden">Actions</span></th>
+            {% for name in model_view._list_prop_names %}
+              {% set label = model_view._column_labels.get(name, name) %}
+              <th>
+                {% if name in model_view._sort_fields %}
+                  {% if request.query_params.get("sortBy") == name %}
+                    {% if request.query_params.get("sort") == "asc" %}
+                      <a href="{{ request.url.include_query_params(sort='desc') | escape }}"
+                         class="text-decoration-none">
+                        <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
+                        {{ label | escape }}
+                      </a>
+                    {% else %}
+                      <a href="{{ request.url.include_query_params(sort='asc') | escape }}"
+                         class="text-decoration-none">
+                        <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+                        {{ label | escape }}
+                      </a>
+                    {% endif %}
+                  {% else %}
+                    <a href="{{ request.url.include_query_params(sortBy=name, sort='asc') | escape }}"
+                       class="text-decoration-none">
+                      {{ label | escape }}
+                    </a>
+                  {% endif %}
+                {% else %}
+                  {{ label | escape }}
+                {% endif %}
+              </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in pagination.rows %}
+            <tr>
+              <td>
+                {% if row %}
+                  <input type="hidden" value="{{ get_object_identifier(row) | escape }}">
+                  <input class="form-check-input m-0 align-middle select-box"
+                         type="checkbox"
+                         aria-label="Select item">
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if model_view.can_view_details %}
+                  <a hx-get="{{ model_view._build_url_for('admin:details', request, row) | escape }}"
+                     hx-target="#main-container"
+                     hx-push-url="true"
+                     class="action-link"
+                     title="View">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                    <span class="visually-hidden">View</span>
+                  </a>
+                {% endif %}
+
+                {% if model_view.can_edit %}
+                  <a hx-get="{{ model_view._build_url_for('admin:edit', request, row) | escape }}"
+                     hx-target="#main-container"
+                     hx-push-url="true"
+                     class="action-link ms-2"
+                     title="Edit">
+                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                    <span class="visually-hidden">Edit</span>
+                  </a>
+                {% endif %}
+
+                {% if model_view.can_delete %}
+                  <a hx-delete="{{ model_view._url_for_delete(request, row) | escape }}"
+                     hx-confirm="Are you sure you want to delete this {{ model_view.name | escape }}?"
+                     hx-target="closest tr"
+                     hx-swap="outerHTML swap:1s"
+                     class="action-link ms-2"
+                     title="Delete">
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                    <span class="visually-hidden">Delete</span>
+                  </a>
+                {% endif %}
+              </td>
+              {% for name in model_view._list_prop_names %}
+                {% set value, formatted_value = model_view.get_list_value(row, name) %}
+                {% if name in model_view._relation_names %}
+                  {% if is_list(value) %}
+                    <td>
+                      {% for elem, formatted_elem in zip(value, formatted_value) %}
+                        <a hx-get="{{ model_view._build_url_for('admin:details', request, elem) | escape }}"
+                           hx-target="#main-container"
+                           hx-push-url="true"
+                           class="badge bg-secondary text-decoration-none me-1">
+                          {{ formatted_elem | escape }}
+                        </a>
+                      {% endfor %}
+                    </td>
+                  {% else %}
+                    <td>
+                      <a hx-get="{{ model_view._build_url_for('admin:details', request, value) | escape }}"
+                         hx-target="#main-container"
+                         hx-push-url="true"
+                         class="link-details">
+                        {{ formatted_value | escape }}
+                      </a>
+                    </td>
+                  {% endif %}
+                {% else %}
+                  <td>{{ formatted_value | escape }}</td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="{{ model_view._list_prop_names | length + 2 }}" class="text-center py-4">
+                No items found
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {# ページネーション部分 #}
+    <div class="card-footer d-flex justify-content-between align-items-center gap-2"
+         id="pagination-container"
+         hx-indicator=".htmx-indicator"
+         hx-on::after-request="
+           if(!event.detail.successful) {
+             htmx.trigger('#notifications', 'showMessage', {
+               message: event.detail.error || 'Failed to load page',
+               type: 'error'
+             });
+           }
+           htmx.removeClass(document.body, 'loading');
+         "
+         hx-on::before-request="htmx.addClass(document.body, 'loading');">
+      
+      <p class="m-0 text-muted">
+        Showing 
+        <span>{{ ((pagination.page - 1) * pagination.page_size) + 1 }}</span> to
+        <span>{{ min(pagination.page * pagination.page_size, pagination.count) }}</span> of 
+        <span>{{ pagination.count }}</span> items
+      </p>
+
+      <ul class="pagination m-0 ms-auto">
+        <li class="page-item {% if not pagination.has_previous %}disabled{% endif %}">
+          <a class="page-link"
+             {% if pagination.has_previous %}
+               hx-get="{{ pagination.previous_page.url | escape }}"
+               hx-target="#main-container"
+               hx-push-url="true"
+             {% endif %}
+             aria-label="Previous page">
+            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+            <span>prev</span>
+          </a>
+        </li>
+
+        {% for page_control in pagination.page_controls %}
+          <li class="page-item {% if page_control.number == pagination.page %}active{% endif %}">
+            <a class="page-link"
+               hx-get="{{ page_control.url | escape }}"
+               hx-target="#main-container"
+               hx-push-url="true"
+               aria-label="Page {{ page_control.number }}">
+              {{ page_control.number }}
+            </a>
+          </li>
+        {% endfor %}
+
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+          <a class="page-link"
+             {% if pagination.has_next %}
+               hx-get="{{ pagination.next_page.url | escape }}"
+               hx-target="#main-container"
+               hx-push-url="true"
+             {% endif %}
+             aria-label="Next page">
+            <span>next</span>
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          </a>
+        </li>
+      </ul>
+
+      <div class="dropdown">
+        <button type="button"
+                class="btn btn-sm btn-light dropdown-toggle"
+                data-bs-toggle="dropdown"
+                aria-expanded="false">
+          {{ request.query_params.get("pageSize") or model_view.page_size }} / Page
+        </button>
+        <div class="dropdown-menu">
+          {% for page_size_option in model_view.page_size_options %}
+            <a class="dropdown-item"
+               hx-get="{{ request.url.include_query_params(pageSize=page_size_option, page=pagination.resize(page_size_option).page) | escape }}"
+               hx-target="#main-container"
+               hx-push-url="true">
+              {{ page_size_option }} / Page
+            </a>
+          {% endfor %}
+        </div>
+      </div>

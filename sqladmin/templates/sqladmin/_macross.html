@@ -1,8 +1,11 @@
+{# メニューカテゴリのマクロ #}
 {% macro menu_category(menu, request) %}
 {% if menu.is_active(request) %}
 <li class="nav-item dropdown">
-  <a class="nav-link dropdown-toggle {% if menu.is_active(request) %}active{% endif %}" data-bs-toggle="dropdown"
-    href="#">
+  <a class="nav-link dropdown-toggle {% if menu.is_active(request) %}active{% endif %}"
+     data-bs-toggle="dropdown"
+     href="#"
+     hx-boost="true">
     <span class="nav-link-icon d-md-none d-lg-inline-block">
       {% if menu.icon %}<i class="{{ menu.icon }}"></i>{% endif %}
     </span>
@@ -33,6 +36,7 @@
 {% endif %}
 {% endmacro %}
 
+{# メニューアイテムのマクロ #}
 {% macro menu_item(menu, request) %}
 {% if menu.is_visible(request) and menu.is_accessible(request) %}
 <li class="nav-item">
@@ -51,6 +55,7 @@
 {% endif %}
 {% endmacro %}
 
+{# メニュー表示のマクロ #}
 {% macro display_menu(menu, request) %}
 <div class="navbar-nav">
   {# ローディングインジケーター #}
@@ -71,6 +76,7 @@
 </div>
 {% endmacro %}
 
+{# フォームフィールド描画のマクロ #}
 {% macro render_field(field, kwargs={}) %}
 <div class="mb-3 form-group row">
   {{ field.label(class_="form-label col-sm-2 col-form-label") }}
@@ -78,28 +84,49 @@
     {% if field.errors %}
     {{ field(class_="form-control is-invalid") }}
     {% else %}
-    {{ field() }}
+    {{ field(class_="form-control") }}
     {% endif %}
-    {% for error in field.errors %}
-    <div class="invalid-feedback">{{ error }}</div>
-    {% endfor %}
-    {% if field.description %}
-    <small class="text-muted">{{ field.description }}</small>
-    {% endif %}
+    <div id="field-feedback-{{ field.name }}">
+      {% for error in field.errors %}
+      <div class="invalid-feedback">{{ error }}</div>
+      {% endfor %}
+      {% if field.description %}
+      <small class="text-muted">{{ field.description }}</small>
+      {% endif %}
+    </div>
   </div>
 </div>
 {% endmacro %}
 
-{% macro render_form_fields(form, form_opts=None) %}
-{% if form.hidden_tag is defined %}
-{{ form.hidden_tag() }}
-{% else %}
-{% for f in form if f.widget.input_type == 'hidden' %}
-{{ f }}
-{% endfor %}
-{% endif %}
+{# フォーム全体描画のマクロ #}
+{% macro render_form_fields(form, form_opts={}) %}
+<form hx-post="{{ form_opts.get('submit_url', '') }}"
+      hx-target="{{ form_opts.get('target', '#main-container') }}"
+      hx-indicator="#form-loading"
+      class="needs-validation"
+      {% if form_opts.get('swap_oob', False) %}hx-swap-oob="true"{% endif %}>
+  
+  {% if form.hidden_tag is defined %}
+  {{ form.hidden_tag() }}
+  {% else %}
+  {% for f in form if f.widget.input_type == 'hidden' %}
+  {{ f }}
+  {% endfor %}
+  {% endif %}
 
-{% for f in form if f.widget.input_type != 'hidden' %}
-{{ render_field(f, kwargs) }}
-{% endfor %}
+  <div id="form-loading" 
+       class="htmx-indicator spinner-border text-primary" 
+       role="status"
+       style="display: none;">
+    <span class="visually-hidden">Submitting...</span>
+  </div>
+
+  {% for f in form if f.widget.input_type != 'hidden' %}
+  {{ render_field(f, form_opts) }}
+  {% endfor %}
+
+  <div class="form-footer">
+    <button type="submit" class="btn btn-primary">保存</button>
+  </div>
+</form>
 {% endmacro %}

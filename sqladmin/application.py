@@ -435,7 +435,7 @@ class Admin(BaseAdminView):
     @login_required
     async def list(self, request: Request) -> Response:
         """List route to display paginated Model instances."""
-
+        breakpoint()
         await self._list(request)
 
         model_view = self._find_model_view(request.path_params["identity"])
@@ -452,8 +452,12 @@ class Admin(BaseAdminView):
             )
 
         context = {"model_view": model_view, "pagination": pagination}
+
+        is_htmx = request.headers.get('HX-Request') == 'true'
+        template = model_view.list_template if is_htmx else model_view.list_full_template
+
         return await self.templates.TemplateResponse(
-            request, model_view.list_template, context
+            request, template, context
         )
 
     @login_required
@@ -474,8 +478,11 @@ class Admin(BaseAdminView):
             "title": model_view.name,
         }
 
+        is_htmx = request.headers.get('HX-Request') == 'true'
+        template = model_view.details_template if is_htmx else model_view.details_full_template
+
         return await self.templates.TemplateResponse(
-            request, model_view.details_template, context
+            request, template, context
         )
 
     @login_required
@@ -521,14 +528,23 @@ class Admin(BaseAdminView):
             "form": form,
         }
 
+        is_htmx = request.headers.get('HX-Request') == 'true'
+        template = model_view.create_template if is_htmx else model_view.create_full_template
+
+        context["form_opts"] = {
+            "submit_url": request.url_for("admin:create", identity=identity),
+            "target": "#main-container"
+        }
+
         if request.method == "GET":
+
             return await self.templates.TemplateResponse(
-                request, model_view.create_template, context
+                request, template, context
             )
 
         if not form.validate():
             return await self.templates.TemplateResponse(
-                request, model_view.create_template, context, status_code=400
+                request, template, context, status_code=400
             )
 
         form_data_dict = self._denormalize_wtform_data(form.data, model_view.model)
@@ -556,6 +572,7 @@ class Admin(BaseAdminView):
         await self._edit(request)
 
         identity = request.path_params["identity"]
+        identifier = request.path_params["pk"]
         model_view = self._find_model_view(identity)
 
         model = await model_view.get_object_for_edit(request)
@@ -570,9 +587,20 @@ class Admin(BaseAdminView):
             "form": Form(obj=model, data=self._normalize_wtform_data(model)),
         }
 
+        template = model_view.edit_full_template
+
+        if request.headers.get('HX-Request') == 'true':
+            template = model_view.edit_template
+
+        context["form_opts"] = {
+            "submit_url": request.url_for("admin:edit", identity=identity, pk=identifier),
+            "target": "#main-container"
+        }
+
+
         if request.method == "GET":
             return await self.templates.TemplateResponse(
-                request, model_view.edit_template, context
+                request, template, context
             )
 
         form_data = await self._handle_form_data(request, model)
@@ -580,7 +608,7 @@ class Admin(BaseAdminView):
         if not form.validate():
             context["form"] = form
             return await self.templates.TemplateResponse(
-                request, model_view.edit_template, context, status_code=400
+                request, template, context, status_code=400
             )
 
         form_data_dict = self._denormalize_wtform_data(form.data, model)
@@ -594,8 +622,12 @@ class Admin(BaseAdminView):
         except Exception as e:
             logger.exception(e)
             context["error"] = str(e)
+
+            is_htmx = request.headers.get('HX-Request') == 'true'
+            template = model_view.list_template if is_htmx else model_view.list_full_template
+
             return await self.templates.TemplateResponse(
-                request, model_view.edit_template, context, status_code=400
+                request, template, context, status_code=400
             )
 
         url = self.get_save_redirect_url(
@@ -629,13 +661,21 @@ class Admin(BaseAdminView):
             return await self.templates.TemplateResponse(request, "sqladmin/login.html")
 
         ok = await self.authentication_backend.login(request)
+
         if not ok:
             context["error"] = "Invalid credentials."
             return await self.templates.TemplateResponse(
                 request, "sqladmin/login.html", context, status_code=400
             )
 
-        return RedirectResponse(request.url_for("admin:index"), status_code=302)
+        # return RedirectResponse(request.url_for("admin:index"), status_code=302)
+        return RedirectResponse(
+            request.url_for("admin:index"),
+            status_code=302,
+            headers={
+                "HX-Redirect": str(request.url_for("admin:index"))
+            }
+        )
 
     async def logout(self, request: Request) -> Response:
         assert self.authentication_backend is not None

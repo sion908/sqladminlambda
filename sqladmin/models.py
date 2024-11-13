@@ -419,16 +419,20 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     """
 
     # Templates
-    list_template: ClassVar[str] = "sqladmin/list.html"
+    list_template: ClassVar[str] = "sqladmin/partials/_list.html"
+    list_full_template: ClassVar[str] = "sqladmin/list.html"
     """List view template. Default is `sqladmin/list.html`."""
 
-    create_template: ClassVar[str] = "sqladmin/create.html"
+    create_template: ClassVar[str] = "sqladmin/partials/_create.html"
+    create_full_template: ClassVar[str] = "sqladmin/create.html"
     """Create view template. Default is `sqladmin/create.html`."""
 
-    details_template: ClassVar[str] = "sqladmin/details.html"
+    details_template: ClassVar[str] = "sqladmin/partials/_details.html"
+    details_full_template: ClassVar[str] = "sqladmin/details.html"
     """Details view template. Default is `sqladmin/details.html`."""
 
-    edit_template: ClassVar[str] = "sqladmin/edit.html"
+    edit_template: ClassVar[str] = "sqladmin/partials/_edit.html"
+    edit_full_template: ClassVar[str] = "sqladmin/edit.html"
     """Edit view template. Default is `sqladmin/edit.html`."""
 
     # Export
@@ -887,7 +891,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     async def get_list_value(self, obj: Any, prop: str) -> Tuple[Any, Any]:
         """Get tuple of (value, formatted_value) for the list view."""
-
         value = await self.get_prop_value(obj, prop)
         formatter = self._list_formatters.get(prop)
         formatted_value = (
