@@ -435,7 +435,7 @@ class Admin(BaseAdminView):
     @login_required
     async def list(self, request: Request) -> Response:
         """List route to display paginated Model instances."""
-        breakpoint()
+
         await self._list(request)
 
         model_view = self._find_model_view(request.path_params["identity"])
@@ -654,6 +654,7 @@ class Admin(BaseAdminView):
         return await model_view.export_data(rows, export_type=export_type)
 
     async def login(self, request: Request) -> Response:
+
         assert self.authentication_backend is not None
 
         context = {}
@@ -667,6 +668,9 @@ class Admin(BaseAdminView):
             return await self.templates.TemplateResponse(
                 request, "sqladmin/login.html", context, status_code=400
             )
+
+        if isinstance(ok, Response):
+            return ok
 
         # return RedirectResponse(request.url_for("admin:index"), status_code=302)
         return RedirectResponse(

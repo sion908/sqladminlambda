@@ -61,9 +61,10 @@
           {% endif %}
           {% if model_view.can_edit %}
           <div class="col-md-1">
-            <a href="{{ model_view._build_url_for('admin:edit', request, model) }}" class="btn btn-primary">
-              Edit
-            </a>
+            <a hx-get="{{ model_view._build_url_for('admin:edit', request, model) | escape }}" hx-target="#main-container"
+              hx-push-url="true" title="Edit" class="btn btn-primary">
+                Edit
+              </a>
           </div>
           {% endif %}
           {% for custom_action,label in model_view._custom_actions_in_detail.items() %}

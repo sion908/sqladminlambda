@@ -1,12 +1,21 @@
 {% extends "sqladmin/base.html" %}
 {% block body %}
 <div class="d-flex align-items-center justify-content-center vh-100">
+  {# <form class="col-lg-6 col-md-6 card card-md" 
+        hx-post="{{ url_for('admin:login') }}"
+        hx-trigger="submit"
+        hx-push-url="true"
+        hx-target="body"
+        hx-swap="outerHTML"
+        data-auth="false"> #}
   <form class="col-lg-6 col-md-6 card card-md" 
         hx-post="{{ url_for('admin:login') }}"
         hx-trigger="submit"
-        hx-target="body"
-        hx-swap="outerHTML">
-    
+        hx-target="#login-message"
+        hx-swap="none"
+        data-auth="false"
+        hx-ext="json-enc">
+
     <div class="card-body">
       <h2 class="card-title text-center mb-4">Login to {{ admin.title }}</h2>
       

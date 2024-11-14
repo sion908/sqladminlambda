@@ -23,10 +23,11 @@
         </div>
       </nav>
       {% if admin.authentication_backend %}
-      <a href="{{ request.url_for('admin:logout') }}" class="btn btn-secondary btn-icon">
+      <a hx-post="{{ request.url_for('admin:logout') }}" hx-swap="none" class="btn btn-secondary btn-icon" data-logout>
         <i class="fa fa-sign-out"></i>
         <span>Logout</span>
       </a>
+      <div id="logout-message"></div>
       {% endif %}
     </div>
   </aside>
