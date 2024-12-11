@@ -28,12 +28,24 @@
     {% endblock %}
   </main>
   {% endblock %}
-  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/jquery.min.js') }}"></script>
+  {# <script type="text/javascript" src="{{ url_for('admin:statics', path='js/jquery.min.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/tabler.min.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/popper.min.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/bootstrap.min.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/select2.full.min.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/flatpickr.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/flatpickr.min.js') }}"></script> #}
+  {# <!-- jQuery (Tablerとselect2に必要) --> #}
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+  {# <!-- Popper.js (Bootstrap 4に必要) --> #}
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  {# <!-- Bootstrap 4.6.1 --> #}
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"></script>
+  {# <!-- Select2 4.0.13 --> #}
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.full.min.js"></script>
+  {# <!-- Flatpickr 4.6.13 --> #}
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+  {# <!-- Tabler 1.0.0-beta17 --> #}
+  <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/main.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/auth.js') }}"></script>
   {% block tail %}
