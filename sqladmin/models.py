@@ -873,8 +873,9 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                 obj = getattr(obj, part, None)
             except DetachedInstanceError:
                 obj = await self._lazyload_prop(obj, part)
-
-        if obj and isinstance(obj, Enum):
+        # breakpoint()
+        # if obj and isinstance(obj, Enum):
+        if obj is not None and isinstance(obj, Enum):
             obj = obj.name
 
         return obj
@@ -896,6 +897,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         formatted_value = (
             formatter(obj, prop) if formatter else self._default_formatter(value)
         )
+        
         return value, formatted_value
 
     async def get_detail_value(self, obj: Any, prop: str) -> Tuple[Any, Any]:
