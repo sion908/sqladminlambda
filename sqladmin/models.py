@@ -873,8 +873,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                 obj = getattr(obj, part, None)
             except DetachedInstanceError:
                 obj = await self._lazyload_prop(obj, part)
-        # breakpoint()
-        # if obj and isinstance(obj, Enum):
         if obj is not None and isinstance(obj, Enum):
             obj = obj.name
 

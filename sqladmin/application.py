@@ -512,7 +512,6 @@ class Admin(BaseAdminView):
     @login_required
     async def create(self, request: Request) -> Response:
         """Create model endpoint."""
-
         await self._create(request)
 
         identity = request.path_params["identity"]
@@ -770,6 +769,53 @@ class Admin(BaseAdminView):
             ):
                 data[reserved_field_name] = data.pop(field_name)
         return data
+
+    def debug_form_validation(self, form):
+        """
+        Utility function to debug WTForms validation errors.
+        Returns detailed information about validation failures.
+
+        Args:
+            form: The WTForms form instance that failed validation
+
+        Returns:
+            dict: Detailed error information for each field
+        """
+        debug_info = {
+            "is_valid": form.validate(),
+            "errors": {},
+            "field_data": {},
+            "validators": {},
+        }
+
+        # Collect errors and field data
+        for field_name, field in form._fields.items():
+            # Get field errors
+            if field.errors:
+                debug_info["errors"][field_name] = {
+                    "errors": field.errors,
+                    "raw_data": field.raw_data,
+                    "data": field.data,
+                }
+
+            # Collect field data regardless of errors
+            debug_info["field_data"][field_name] = {
+                "raw_data": field.raw_data,
+                "data": field.data,
+                "type": type(field).__name__
+            }
+
+            # Collect validator information
+            debug_info["validators"][field_name] = [
+                {
+                    "validator": type(validator).__name__,
+                    "args": getattr(validator, "args", None),
+                    "kwargs": getattr(validator, "kwargs", None)
+                }
+                for validator in field.validators
+            ]
+
+        return debug_info
 
 
 def expose(
