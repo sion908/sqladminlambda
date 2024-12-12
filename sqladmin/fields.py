@@ -276,6 +276,7 @@ class QuerySelectMultipleField(QuerySelectField):
             )
             for pk, label in self._select_data:
                 if isinstance(label, str):
+                    primary_key = primary_keys[0]
                     yield (pk, label, str(pk) == primary_key, {})
                 else:
                     yield (pk, self.get_label(label), pk in primary_keys, {})

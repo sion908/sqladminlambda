@@ -47,6 +47,11 @@ Main features include:
 
 ---
 
+## 注意
+
+これは本家のREADMEで書き換えてないです<br>
+申し訳ない...
+
 ## Installation
 
 Install using `pip`:
