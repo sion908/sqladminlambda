@@ -1,0 +1,26 @@
+<div id="error-container" hx-swap-oob="innerHTML:#error-container">
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">{{ error }}</h4>
+        
+        {% if validation_errors %}
+        <hr>
+        <div class="validation-details">
+            {% for field_name, field_info in validation_errors.errors.items() %}
+            <div class="field-error mb-2">
+                <strong>{{ field_name }}:</strong>
+                <ul class="mb-1">
+                    {% for error_msg in field_info.errors %}
+                    <li>{{ error_msg }}</li>
+                    {% endfor %}
+                </ul>
+                <small class="text-muted">
+                    Input: {{ field_info.raw_data|join(', ') if field_info.raw_data else 'None' }}
+                </small>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

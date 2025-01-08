@@ -11,12 +11,18 @@
             hx-target="{{ form_opts.get('target', '#main-container') }}"
             hx-indicator="#form-loading"
             class="needs-validation"
+            hx-on::after-request="
+              if(event.detail.failed) {
+                const container = document.getElementById('error-container');
+                container.innerHTML = event.detail.xhr.response;
+              }
+            "
             {% if form_opts.get('swap_oob', False) %}hx-swap-oob="true"{% endif %}>
-        <div class="row">
-          {% if error %}
-          <div class="alert alert-danger" role="alert">{{ error }}</div>
-          {% endif %}
+        
+        <div id="error-container">
+            {% include "sqladmin/partials/_error_container.html" %}
         </div>
+
         <fieldset class="form-fieldset">
           {{ render_form_fields(form, form_opts=form_opts) }}
           <div id="form-loading"
@@ -34,9 +40,33 @@
           </div>
           <div class="col-md-6">
             <div class="btn-group flex-wrap" data-toggle="buttons">
-              <input type="submit" name="save" value="Save" class="btn">
-              <input type="submit" name="save" value="Save and continue editing" class="btn">
-              <input type="submit" name="save" value="Save and add another" class="btn">
+              <button type="button" 
+                      class="btn"
+                      hx-post="{{ url_for('admin:create', identity=model_view.identity) }}"
+                      hx-include="closest form"
+                      hx-target="#main-container"
+                      hx-swap="outerHTML"
+                      hx-vals='{"save": "Save"}'>
+                Save
+              </button>
+              <button type="button" 
+                      class="btn"
+                      hx-post="{{ url_for('admin:create', identity=model_view.identity) }}"
+                      hx-include="closest form"
+                      hx-target="#main-container"
+                      hx-swap="outerHTML"
+                      hx-vals='{"save": "Save and continue editing"}'>
+                Save and continue editing
+              </button>
+              <button type="button" 
+                      class="btn"
+                      hx-post="{{ url_for('admin:create', identity=model_view.identity) }}"
+                      hx-include="closest form"
+                      hx-target="#main-container"
+                      hx-swap="outerHTML"
+                      hx-vals='{"save": "Save and add another"}'>
+                Save and add another
+              </button>
             </div>
           </div>
         </div>
@@ -44,4 +74,3 @@
     </div>
   </div>
 </div>
-{# {% endblock %} #}

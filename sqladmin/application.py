@@ -528,6 +528,7 @@ class Admin(BaseAdminView):
         }
 
         is_htmx = request.headers.get('HX-Request') == 'true'
+
         template = model_view.create_template if is_htmx else model_view.create_full_template
 
         context["form_opts"] = {
@@ -540,13 +541,39 @@ class Admin(BaseAdminView):
             return await self.templates.TemplateResponse(
                 request, template, context
             )
-
         if not form.validate():
+            validation_debug = self.debug_form_validation(form)
+
+            # エラーの詳細をログに記録
+            logger.error(f"Form validation failed: {validation_debug}")
+
+            # HTMXリクエストの場合のコンテキスト
+            if request.headers.get("HX-Request") == "true":
+                error_context = {
+                    "error": "Validation failed. See details below.",
+                    "validation_errors": validation_debug,
+                }
+                return await self.templates.TemplateResponse(
+                    request,
+                    "sqladmin/partials/_error_container.html",
+                    error_context,
+                    status_code=400
+                )
+
+            # 通常のリクエストの場合は完全なコンテキスト
+            context.update({
+                "error": "Validation failed. See details below.",
+                "validation_errors": validation_debug,
+            })
             return await self.templates.TemplateResponse(
-                request, template, context, status_code=400
+                request,
+                template,
+                context,
+                status_code=400
             )
 
         form_data_dict = self._denormalize_wtform_data(form.data, model_view.model)
+
         try:
             obj = await model_view.insert_model(request, form_data_dict)
         except Exception as e:
