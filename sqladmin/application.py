@@ -347,6 +347,7 @@ class Admin(BaseAdminView):
         debug: bool = False,
         templates_dir: str = "templates",
         authentication_backend: AuthenticationBackend | None = None,
+        context: dict | None = None
     ) -> None:
         """
         Args:
@@ -425,6 +426,7 @@ class Admin(BaseAdminView):
         self.admin.exception_handlers = {HTTPException: http_exception}
         self.admin.debug = debug
         self.app.mount(base_url, app=self.admin, name="admin")
+        self.context = context if context is not None else {}
 
     @login_required
     async def index(self, request: Request) -> Response:
@@ -451,7 +453,11 @@ class Admin(BaseAdminView):
                 request.url.include_query_params(page=pagination.page), status_code=302
             )
 
-        context = {"model_view": model_view, "pagination": pagination}
+        context = {
+            **self.context,
+            "model_view": model_view,
+            "pagination": pagination
+        }
 
         is_htmx = request.headers.get('HX-Request') == 'true'
         template = model_view.list_template if is_htmx else model_view.list_full_template
@@ -473,6 +479,7 @@ class Admin(BaseAdminView):
             raise HTTPException(status_code=404)
 
         context = {
+            **self.context,
             "model_view": model_view,
             "model": model,
             "title": model_view.name,
@@ -522,24 +529,23 @@ class Admin(BaseAdminView):
         form_data = await self._handle_form_data(request)
         form = Form(form_data)
 
-        context = {
-            "model_view": model_view,
-            "form": form,
-        }
-
         is_htmx = request.headers.get('HX-Request') == 'true'
 
         template = model_view.create_template if is_htmx else model_view.create_full_template
 
-        context["form_opts"] = {
-            "submit_url": request.url_for("admin:create", identity=identity),
-            "target": "#main-container"
-        }
+        self.context.update({
+            "model_view": model_view,
+            "form": form,
+            "form_opts": {
+                "submit_url": request.url_for("admin:create", identity=identity),
+                "target": "#main-container"
+            }
+        })
 
         if request.method == "GET":
 
             return await self.templates.TemplateResponse(
-                request, template, context
+                request, template, self.context
             )
         if not form.validate():
             validation_debug = self.debug_form_validation(form)
@@ -561,14 +567,14 @@ class Admin(BaseAdminView):
                 )
 
             # 通常のリクエストの場合は完全なコンテキスト
-            context.update({
+            self.context.update({
                 "error": "Validation failed. See details below.",
                 "validation_errors": validation_debug,
             })
             return await self.templates.TemplateResponse(
                 request,
                 template,
-                context,
+                self.context,
                 status_code=400
             )
 
@@ -578,9 +584,11 @@ class Admin(BaseAdminView):
             obj = await model_view.insert_model(request, form_data_dict)
         except Exception as e:
             logger.exception(e)
-            context["error"] = str(e)
+            self.context.update({
+                "error": str(e)
+            })
             return await self.templates.TemplateResponse(
-                request, model_view.create_template, context, status_code=400
+                request, model_view.create_template, self.context, status_code=400
             )
 
         url = self.get_save_redirect_url(
@@ -607,34 +615,34 @@ class Admin(BaseAdminView):
 
         Form = await model_view.scaffold_form()
         model_view._validate_form_class(model_view._form_edit_rules, Form)
-        context = {
-            "obj": model,
-            "model_view": model_view,
-            "form": Form(obj=model, data=self._normalize_wtform_data(model)),
-        }
 
         template = model_view.edit_full_template
 
         if request.headers.get('HX-Request') == 'true':
             template = model_view.edit_template
 
-        context["form_opts"] = {
-            "submit_url": request.url_for("admin:edit", identity=identity, pk=identifier),
-            "target": "#main-container"
-        }
+        self.context.update({
+            "obj": model,
+            "model_view": model_view,
+            "form": Form(obj=model, data=self._normalize_wtform_data(model)),
+            "form_opts": {
+                "submit_url": request.url_for("admin:edit", identity=identity, pk=identifier),
+                "target": "#main-container"
+            }
+        })
 
 
         if request.method == "GET":
             return await self.templates.TemplateResponse(
-                request, template, context
+                request, template, self.context
             )
 
         form_data = await self._handle_form_data(request, model)
         form = Form(form_data)
         if not form.validate():
-            context["form"] = form
+            self.context["form"] = form
             return await self.templates.TemplateResponse(
-                request, template, context, status_code=400
+                request, template, self.context, status_code=400
             )
 
         form_data_dict = self._denormalize_wtform_data(form.data, model)
@@ -647,13 +655,13 @@ class Admin(BaseAdminView):
                 )
         except Exception as e:
             logger.exception(e)
-            context["error"] = str(e)
+            self.context["error"] = str(e)
 
             is_htmx = request.headers.get('HX-Request') == 'true'
             template = model_view.list_template if is_htmx else model_view.list_full_template
 
             return await self.templates.TemplateResponse(
-                request, template, context, status_code=400
+                request, template, self.context, status_code=400
             )
 
         url = self.get_save_redirect_url(
@@ -683,7 +691,7 @@ class Admin(BaseAdminView):
 
         assert self.authentication_backend is not None
 
-        context = {}
+        context = self.context
         if request.method == "GET":
             return await self.templates.TemplateResponse(request, "sqladmin/login.html")
 
