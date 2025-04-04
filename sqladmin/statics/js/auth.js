@@ -217,7 +217,8 @@ const AuthLib = {
           // const nextUrl = params.get('next') || data.redirect;
 
           const params = new URLSearchParams(window.location.search);
-          const nextUrl = params.get('next') || data.redirect;
+          const nextInput = document.querySelector('input[name=next]');
+          const nextUrl = (nextInput && nextInput.value) || params.get('next') || data.redirect;
           const token = AuthLib.token.get();
 
           htmx.ajax('GET', nextUrl, {

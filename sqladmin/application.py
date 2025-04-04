@@ -692,6 +692,8 @@ class Admin(BaseAdminView):
         assert self.authentication_backend is not None
 
         context = self.context
+        if next_url := request.query_params.get("next"):
+            context["next_url"] = next_url
         if request.method == "GET":
             return await self.templates.TemplateResponse(request, "sqladmin/login.html")
 
