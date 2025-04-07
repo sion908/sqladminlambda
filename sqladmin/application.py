@@ -431,12 +431,14 @@ class Admin(BaseAdminView):
     @login_required
     async def index(self, request: Request) -> Response:
         """Index route which can be overridden to create dashboards."""
+        self._can_access_dashboard(request)
 
         return await self.templates.TemplateResponse(request, "sqladmin/index.html")
 
     @login_required
     async def list(self, request: Request) -> Response:
         """List route to display paginated Model instances."""
+        self._can_access_dashboard(request)
 
         await self._list(request)
 
@@ -469,6 +471,7 @@ class Admin(BaseAdminView):
     @login_required
     async def details(self, request: Request) -> Response:
         """Details route."""
+        self._can_access_dashboard(request)
 
         await self._details(request)
 
@@ -495,6 +498,7 @@ class Admin(BaseAdminView):
     @login_required
     async def delete(self, request: Request) -> Response:
         """Delete route."""
+        self._can_access_dashboard(request)
 
         await self._delete(request)
 
@@ -519,6 +523,7 @@ class Admin(BaseAdminView):
     @login_required
     async def create(self, request: Request) -> Response:
         """Create model endpoint."""
+        self._can_access_dashboard(request)
         await self._create(request)
 
         identity = request.path_params["identity"]
@@ -602,6 +607,7 @@ class Admin(BaseAdminView):
     @login_required
     async def edit(self, request: Request) -> Response:
         """Edit model endpoint."""
+        self._can_access_dashboard(request)
 
         await self._edit(request)
 
@@ -692,6 +698,7 @@ class Admin(BaseAdminView):
         assert self.authentication_backend is not None
 
         context = self.context
+        breakpoint()
         if next_url := request.query_params.get("next"):
             context["next_url"] = next_url
         if request.method == "GET":
@@ -761,6 +768,10 @@ class Admin(BaseAdminView):
         ):
             return request.url_for("admin:edit", identity=identity, pk=identifier)
         return request.url_for("admin:create", identity=identity)
+
+    def _can_access_dashboard(self, request: Request):
+        """ダッシュボードへのアクセス可否を決める"""
+        pass
 
     async def _handle_form_data(self, request: Request, obj: Any = None) -> FormData:
         """
