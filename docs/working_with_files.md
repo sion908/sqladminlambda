@@ -34,7 +34,7 @@ storage = FileSystemStorage(path="/tmp")
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True)    
+    id = Column(Integer, primary_key=True)
     file = Column(FileType(storage=storage))
 
 

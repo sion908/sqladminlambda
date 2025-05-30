@@ -59,8 +59,8 @@
 {% macro display_menu(menu, request) %}
 <div class="navbar-nav">
   {# ローディングインジケーター #}
-  <div id="loading-indicator" 
-       class="htmx-indicator spinner-border text-primary" 
+  <div id="loading-indicator"
+       class="htmx-indicator spinner-border text-primary"
        role="status"
        style="display: none;">
     <span class="visually-hidden">Loading...</span>
@@ -105,7 +105,7 @@
       hx-indicator="#form-loading"
       class="needs-validation"
       {% if form_opts.get('swap_oob', False) %}hx-swap-oob="true"{% endif %}>
-  
+
   {% if form.hidden_tag is defined %}
   {{ form.hidden_tag() }}
   {% else %}
@@ -114,8 +114,8 @@
   {% endfor %}
   {% endif %}
 
-  <div id="form-loading" 
-       class="htmx-indicator spinner-border text-primary" 
+  <div id="form-loading"
+       class="htmx-indicator spinner-border text-primary"
        role="status"
        style="display: none;">
     <span class="visually-hidden">Submitting...</span>

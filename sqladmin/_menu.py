@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from starlette.datastructures import URL
 from starlette.requests import Request
 
 if TYPE_CHECKING:
@@ -29,7 +28,7 @@ class ItemMenu:
     def is_active(self, request: Request) -> bool:
         return False
 
-    def url(self, request: Request) -> str | URL:
+    def url(self, request: Request) -> str:
         return "#"
 
     @property
@@ -71,7 +70,7 @@ class ViewMenu(ItemMenu):
     def is_active(self, request: Request) -> bool:
         return self.view.identity == request.path_params.get("identity")
 
-    def url(self, request: Request) -> str | URL:
+    def url(self, request: Request) -> str:
         if self.view.is_model:
             return request.url_for("admin:list", identity=self.view.identity)
         return request.url_for(f"admin:{self.view.identity}")

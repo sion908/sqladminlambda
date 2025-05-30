@@ -1,14 +1,14 @@
 {% extends "sqladmin/base.html" %}
 {% block body %}
 <div class="d-flex align-items-center justify-content-center vh-100">
-  {# <form class="col-lg-6 col-md-6 card card-md" 
+  {# <form class="col-lg-6 col-md-6 card card-md"
         hx-post="{{ url_for('admin:login') }}"
         hx-trigger="submit"
         hx-push-url="true"
         hx-target="body"
         hx-swap="outerHTML"
         data-auth="false"> #}
-  <form class="col-lg-6 col-md-6 card card-md" 
+  <form class="col-lg-6 col-md-6 card card-md"
         hx-post="{{ url_for('admin:login') }}"
         hx-trigger="submit"
         hx-target="#login-message"
@@ -18,7 +18,7 @@
 
     <div class="card-body">
       <h2 class="card-title text-center mb-4">Login to {{ admin.title }}</h2>
-      
+
       <!-- ログインメッセージエリア -->
       <div id="login-message">
         {% if error %}
@@ -30,10 +30,10 @@
 
       <div class="mb-3">
         <label class="form-label">Username</label>
-        <input name="username" 
-               type="text" 
-               class="form-control {% if error %}is-invalid{% endif %}" 
-               placeholder="Enter username" 
+        <input name="username"
+               type="text"
+               class="form-control {% if error %}is-invalid{% endif %}"
+               placeholder="Enter username"
                autocomplete="off"
                required>
       </div>
@@ -41,10 +41,10 @@
       <div class="mb-2">
         <label class="form-label">Password</label>
         <div class="input-group input-group-flat">
-          <input name="password" 
-                 type="password" 
-                 class="form-control {% if error %}is-invalid{% endif %}" 
-                 placeholder="Password" 
+          <input name="password"
+                 type="password"
+                 class="form-control {% if error %}is-invalid{% endif %}"
+                 placeholder="Password"
                  autocomplete="off"
                  required>
         </div>

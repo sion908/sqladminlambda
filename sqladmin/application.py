@@ -249,7 +249,7 @@ class BaseAdmin:
 
                 @expose("/custom", methods=["GET"])
                 async def test_page(self, request: Request):
-                    return await self.templates.TemplateResponse(request, "custom.html")
+                    return self.templates.TemplateResponse(request, "custom.html")
 
             admin.add_base_view(CustomAdmin)
             ```
@@ -383,7 +383,7 @@ class Admin(BaseAdminView):
                 "status_code": exc.status_code,
                 "message": exc.detail,
             }
-            return await self.templates.TemplateResponse(
+            return self.templates.TemplateResponse(
                 request, "sqladmin/error.html", context, status_code=exc.status_code
             )
 
@@ -433,7 +433,7 @@ class Admin(BaseAdminView):
         """Index route which can be overridden to create dashboards."""
         self._can_access_dashboard(request)
 
-        return await self.templates.TemplateResponse(request, "sqladmin/index.html")
+        return self.templates.TemplateResponse(request, "sqladmin/index.html")
 
     @login_required
     async def list(self, request: Request) -> Response:
@@ -464,7 +464,7 @@ class Admin(BaseAdminView):
         is_htmx = request.headers.get('HX-Request') == 'true'
         template = model_view.list_template if is_htmx else model_view.list_full_template
 
-        return await self.templates.TemplateResponse(
+        return self.templates.TemplateResponse(
             request, template, context
         )
 
@@ -491,7 +491,7 @@ class Admin(BaseAdminView):
         is_htmx = request.headers.get('HX-Request') == 'true'
         template = model_view.details_template if is_htmx else model_view.details_full_template
 
-        return await self.templates.TemplateResponse(
+        return self.templates.TemplateResponse(
             request, template, context
         )
 
@@ -549,7 +549,7 @@ class Admin(BaseAdminView):
 
         if request.method == "GET":
 
-            return await self.templates.TemplateResponse(
+            return self.templates.TemplateResponse(
                 request, template, self.context
             )
         if not form.validate():
@@ -564,7 +564,7 @@ class Admin(BaseAdminView):
                     "error": "Validation failed. See details below.",
                     "validation_errors": validation_debug,
                 }
-                return await self.templates.TemplateResponse(
+                return self.templates.TemplateResponse(
                     request,
                     "sqladmin/partials/_error_container.html",
                     error_context,
@@ -576,7 +576,7 @@ class Admin(BaseAdminView):
                 "error": "Validation failed. See details below.",
                 "validation_errors": validation_debug,
             })
-            return await self.templates.TemplateResponse(
+            return self.templates.TemplateResponse(
                 request,
                 template,
                 self.context,
@@ -592,7 +592,7 @@ class Admin(BaseAdminView):
             self.context.update({
                 "error": str(e)
             })
-            return await self.templates.TemplateResponse(
+            return self.templates.TemplateResponse(
                 request, model_view.create_template, self.context, status_code=400
             )
 
@@ -639,7 +639,7 @@ class Admin(BaseAdminView):
 
 
         if request.method == "GET":
-            return await self.templates.TemplateResponse(
+            return self.templates.TemplateResponse(
                 request, template, self.context
             )
 
@@ -647,7 +647,7 @@ class Admin(BaseAdminView):
         form = Form(form_data)
         if not form.validate():
             self.context["form"] = form
-            return await self.templates.TemplateResponse(
+            return self.templates.TemplateResponse(
                 request, template, self.context, status_code=400
             )
 
@@ -666,7 +666,7 @@ class Admin(BaseAdminView):
             is_htmx = request.headers.get('HX-Request') == 'true'
             template = model_view.list_template if is_htmx else model_view.list_full_template
 
-            return await self.templates.TemplateResponse(
+            return self.templates.TemplateResponse(
                 request, template, self.context, status_code=400
             )
 
@@ -698,17 +698,16 @@ class Admin(BaseAdminView):
         assert self.authentication_backend is not None
 
         context = self.context
-        breakpoint()
         if next_url := request.query_params.get("next"):
             context["next_url"] = next_url
         if request.method == "GET":
-            return await self.templates.TemplateResponse(request, "sqladmin/login.html")
+            return self.templates.TemplateResponse(request, "sqladmin/login.html")
 
         ok = await self.authentication_backend.login(request)
 
         if not ok:
             context["error"] = "Invalid credentials."
-            return await self.templates.TemplateResponse(
+            return self.templates.TemplateResponse(
                 request, "sqladmin/login.html", context, status_code=400
             )
 

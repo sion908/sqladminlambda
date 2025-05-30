@@ -1,6 +1,38 @@
 {# {% extends "sqladmin/layout.html" %} #}
 {# {% block content %} #}
 <div class="col-12" id="admin-list-container">
+  {# ユーザー作成完了メッセージ #}
+  {% if new_user_created %}
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+      <h4 class="alert-heading">管理者ユーザーを作成しました</h4>
+      <p>以下の認証情報を安全な方法でユーザーに共有してください。</p>
+      <hr>
+      <div class="mb-2">
+        <strong>ユーザー名:</strong> {{ new_user_created.username if new_user_created.username else 'ユーザー名がありません' }}
+      </div>
+      <div class="mb-2">
+        <strong>パスワード:</strong> {{ new_user_created.password if new_user_created.password else 'パスワードがありません' }}
+      </div>
+      <div class="mb-2">
+        <small class="text-muted">※このメッセージはこのページを更新すると表示されなくなります。</small>
+      </div>
+      <div class="mb-2">
+        <small class="text-muted">デバッグ情報: {{ new_user_created|tojson|safe }}</small>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    
+    {# リダイレクト用のJavaScript #}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // 3秒後にリダイレクト
+        setTimeout(function() {
+          window.location.href = '{{ new_user_created.redirect_url }}';
+        }, 3000);
+      });
+    </script>
+  {% endif %}
+
   <div class="card">
     {# ヘッダー部分 #}
     <div class="card-header">
@@ -54,9 +86,9 @@
       <div class="d-flex justify-content-between">
         {# アクションドロップダウン #}
         <div class="dropdown col-4">
-          <button class="btn btn-light dropdown-toggle" 
-                  type="button" 
-                  id="actionDropdown" 
+          <button class="btn btn-light dropdown-toggle"
+                  type="button"
+                  id="actionDropdown"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                   {% if not model_view.can_delete and not model_view._custom_actions_in_list %}disabled{% endif %}>
@@ -65,9 +97,9 @@
           {% if model_view.can_delete or model_view._custom_actions_in_list %}
             <div class="dropdown-menu" aria-labelledby="actionDropdown">
               {% if model_view.can_delete %}
-                <button class="dropdown-item" 
+                <button class="dropdown-item"
                         type="button"
-                        id="action-delete" 
+                        id="action-delete"
                         data-bs-toggle="modal"
                         data-bs-target="#modal-delete"
                         data-name="{{ model_view.name | escape }}"
@@ -270,11 +302,11 @@
            htmx.removeClass(document.body, 'loading');
          "
          hx-on::before-request="htmx.addClass(document.body, 'loading');">
-      
+
       <p class="m-0 text-muted">
-        Showing 
+        Showing
         <span>{{ ((pagination.page - 1) * pagination.page_size) + 1 }}</span> to
-        <span>{{ min(pagination.page * pagination.page_size, pagination.count) }}</span> of 
+        <span>{{ min(pagination.page * pagination.page_size, pagination.count) }}</span> of
         <span>{{ pagination.count }}</span> items
       </p>
 

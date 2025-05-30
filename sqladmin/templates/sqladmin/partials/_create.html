@@ -18,7 +18,7 @@
               }
             "
             {% if form_opts.get('swap_oob', False) %}hx-swap-oob="true"{% endif %}>
-        
+
         <div id="error-container">
             {% include "sqladmin/partials/_error_container.html" %}
         </div>
@@ -40,7 +40,7 @@
           </div>
           <div class="col-md-6">
             <div class="btn-group flex-wrap" data-toggle="buttons">
-              <button type="button" 
+              <button type="button"
                       class="btn"
                       hx-post="{{ url_for('admin:create', identity=model_view.identity) }}"
                       hx-include="closest form"
@@ -49,7 +49,7 @@
                       hx-vals='{"save": "Save"}'>
                 Save
               </button>
-              <button type="button" 
+              <button type="button"
                       class="btn"
                       hx-post="{{ url_for('admin:create', identity=model_view.identity) }}"
                       hx-include="closest form"
@@ -58,7 +58,7 @@
                       hx-vals='{"save": "Save and continue editing"}'>
                 Save and continue editing
               </button>
-              <button type="button" 
+              <button type="button"
                       class="btn"
                       hx-post="{{ url_for('admin:create', identity=model_view.identity) }}"
                       hx-include="closest form"
