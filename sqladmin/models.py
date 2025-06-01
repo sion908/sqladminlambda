@@ -796,7 +796,89 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         rows = await self._run_query(stmt)
         return rows[0]
 
-    async def list(self, request: Request) -> Pagination:
+    async def prepare_list_data(self, rows: List[Any]) -> List[Dict[str, Any]]:
+        """Prepare data for list view asynchronously.
+        
+        Args:
+            rows: List of model instances
+            
+        Returns:
+            List of dictionaries containing prepared data for each row
+        """
+        prepared_rows = []
+        for obj in rows:
+            row_data = {}
+            for prop in self._list_prop_names:
+                value, formatted_value = await self.get_list_value(obj, prop)
+                row_data[prop] = {
+                    'value': value,
+                    'formatted': formatted_value,
+                    'is_relation': prop in self._relation_names
+                }
+            prepared_rows.append(row_data)
+        return prepared_rows
+
+    def _add_pagination_urls(self, pagination: Dict[str, Any], base_url: str) -> None:
+        """Add pagination URLs to the pagination dictionary.
+        
+        Args:
+            pagination: The pagination dictionary
+            base_url: The base URL for pagination
+        """
+        from starlette.datastructures import URL
+        from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+        
+        def _add_page_control(url: str, page: int) -> Dict[str, Any]:
+            parsed = urlparse(url)
+            query_params = parse_qs(parsed.query)
+            query_params['page'] = [str(page)]
+            new_query = urlencode(query_params, doseq=True)
+            new_url = urlunparse(parsed._replace(query=new_query))
+            return {'number': page, 'url': new_url}
+        
+        page = pagination['page']
+        page_size = pagination['page_size']
+        count = pagination['count']
+        max_page_controls = 7
+        
+        page_controls = []
+        
+        # Add previous pages
+        start_page = max(1, page - min(max_page_controls, 3))
+        for p in range(start_page, page):
+            page_controls.append(_add_page_control(base_url, p))
+        
+        # Add current page
+        page_controls.append(_add_page_control(base_url, page))
+        
+        # Add next pages
+        for p in range(page + 1, page + max_page_controls + 1):
+            current = p * page_size
+            if current <= count or current - count < page_size:
+                page_controls.append(_add_page_control(base_url, p))
+        
+        # Add more previous pages if needed
+        if len(page_controls) < max_page_controls:
+            start_page = max(1, page - (max_page_controls - len(page_controls)))
+            for p in range(start_page, page):
+                if not any(pc['number'] == p for pc in page_controls):
+                    page_controls.append(_add_page_control(base_url, p))
+        
+        # Sort and limit page controls
+        page_controls.sort(key=lambda x: x['number'])
+        pagination['page_controls'] = page_controls
+        
+        # Add helper properties
+        pagination['has_previous'] = page > 1
+        pagination['has_next'] = (page * page_size) < count or ((page * page_size) - count) < page_size
+        
+        # Add previous and next page URLs
+        if pagination['has_previous']:
+            pagination['previous_page'] = _add_page_control(base_url, page - 1)
+        if pagination['has_next']:
+            pagination['next_page'] = _add_page_control(base_url, page + 1)
+    
+    async def list(self, request: Request) -> Dict[str, Any]:
         page = self.validate_page_number(request.query_params.get("page"), 1)
         page_size = self.validate_page_number(request.query_params.get("pageSize"), 0)
         page_size = min(page_size or self.page_size, max(self.page_size_options))
@@ -816,13 +898,28 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
         stmt = stmt.limit(page_size).offset((page - 1) * page_size)
         rows = await self._run_query(stmt)
-
-        pagination = Pagination(
-            rows=rows,
-            page=page,
-            page_size=page_size,
-            count=count,
-        )
+        
+        # Prepare data asynchronously before rendering
+        prepared_rows = await self.prepare_list_data(rows)
+        
+        # Add object identifiers for actions
+        for row, obj in zip(prepared_rows, rows):
+            row['id'] = get_object_identifier(obj)
+        
+        # Create pagination with prepared data
+        pagination = {
+            'rows': prepared_rows,
+            'page': page,
+            'page_size': page_size,
+            'count': count,
+            'columns': self._list_prop_names,
+            'column_labels': {prop: self._column_labels.get(prop, prop) 
+                           for prop in self._list_prop_names},
+            'has_actions': hasattr(self, 'action_form') and bool(self.action_form())
+        }
+        
+        # Add pagination URLs
+        self._add_pagination_urls(pagination, str(request.url))
 
         return pagination
 

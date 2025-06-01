@@ -95,3 +95,8 @@ class Menu:
                 root.children.append(*item.children)
                 return
         self.items.append(item)
+        
+    def __getattr__(self, name):
+        if name == 'items':
+            return self.items
+        raise AttributeError(f"'Menu' object has no attribute '{name}'")

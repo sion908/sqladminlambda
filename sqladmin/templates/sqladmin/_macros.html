@@ -63,11 +63,11 @@
   </div>
 
   {% for item in menu.items %}
-  {% if item.type_ == "View" %}
-  {{ menu_item(item, request) }}
-  {% elif item.type_ == "Category" %}
-  {{ menu_category(item, request) }}
-  {% endif %}
+    {% if item.type_ == "View" %}
+    {{ menu_item(item, request) }}
+    {% elif item.type_ == "Category" %}
+    {{ menu_category(item, request) }}
+    {% endif %}
   {% endfor %}
 </div>
 {% endmacro %}

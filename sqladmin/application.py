@@ -444,15 +444,14 @@ class Admin(BaseAdminView):
 
         model_view = self._find_model_view(request.path_params["identity"])
         pagination = await model_view.list(request)
-        pagination.add_pagination_urls(request.url)
 
         request_page = model_view.validate_page_number(
             request.query_params.get("page"), 1
         )
 
-        if request_page > pagination.page:
+        if request_page > pagination['page']:
             return RedirectResponse(
-                request.url.include_query_params(page=pagination.page), status_code=302
+                request.url.include_query_params(page=pagination['page']), status_code=302
             )
 
         context = {

@@ -207,7 +207,7 @@
             <tr>
               <td>
                 {% if row %}
-                  <input type="hidden" value="{{ get_object_identifier(row) | escape }}">
+                  <input type="hidden" value="{{ row.id | escape }}">
                   <input class="form-check-input m-0 align-middle select-box"
                          type="checkbox"
                          aria-label="Select item">
@@ -215,7 +215,7 @@
               </td>
               <td class="text-end">
                 {% if model_view.can_view_details %}
-                  <a hx-get="{{ model_view._build_url_for('admin:details', request, row) | escape }}"
+                  <a hx-get="{{ url_for('admin:details', identity=model_view.identity, pk=row.id) | escape }}"
                      hx-target="#main-container"
                      hx-push-url="true"
                      class="action-link"
@@ -226,7 +226,7 @@
                 {% endif %}
 
                 {% if model_view.can_edit %}
-                  <a hx-get="{{ model_view._build_url_for('admin:edit', request, row) | escape }}"
+                  <a hx-get="{{ url_for('admin:edit', identity=model_view.identity, pk=row.id) | escape }}"
                      hx-target="#main-container"
                      hx-push-url="true"
                      class="action-link ms-2"
@@ -237,7 +237,7 @@
                 {% endif %}
 
                 {% if model_view.can_delete %}
-                  <a hx-delete="{{ model_view._url_for_delete(request, row) | escape }}"
+                  <a hx-delete="{{ url_for('admin:delete', identity=model_view.identity, pk=row.id) | escape }}"
                      hx-confirm="Are you sure you want to delete this {{ model_view.name | escape }}?"
                      hx-target="closest tr"
                      hx-swap="outerHTML swap:1s"
@@ -248,38 +248,40 @@
                   </a>
                 {% endif %}
               </td>
-              {% for name in model_view._list_prop_names %}
-                {% set value, formatted_value = model_view.get_list_value(row, name) %}
-                {% if name in model_view._relation_names %}
-                  {% if is_list(value) %}
+              {% for name in pagination.columns %}
+                {% set prop = row[name] %}
+                {% if prop.is_relation %}
+                  {% if prop.value is sequence and prop.value is not string %}
                     <td>
-                      {% for elem, formatted_elem in zip(value, formatted_value) %}
-                        <a hx-get="{{ model_view._build_url_for('admin:details', request, elem) | escape }}"
+                      {% for elem in prop.value %}
+                        <a hx-get="{{ url_for('admin:details', identity=model_view.identity, pk=elem.id) | escape }}"
                            hx-target="#main-container"
                            hx-push-url="true"
                            class="badge bg-secondary text-decoration-none me-1">
-                          {{ formatted_elem | escape }}
+                          {{ prop.formatted[loop.index0] | escape }}
                         </a>
                       {% endfor %}
                     </td>
                   {% else %}
                     <td>
-                      <a hx-get="{{ model_view._build_url_for('admin:details', request, value) | escape }}"
-                         hx-target="#main-container"
-                         hx-push-url="true"
-                         class="link-details">
-                        {{ formatted_value | escape }}
-                      </a>
+                      {% if prop.value %}
+                        <a hx-get="{{ url_for('admin:details', identity=model_view.identity, pk=prop.value.id) | escape }}"
+                           hx-target="#main-container"
+                           hx-push-url="true"
+                           class="link-details">
+                          {{ prop.formatted | escape }}
+                        </a>
+                      {% endif %}
                     </td>
                   {% endif %}
                 {% else %}
-                  <td>{{ formatted_value | escape }}</td>
+                  <td>{{ prop.formatted | escape }}</td>
                 {% endif %}
               {% endfor %}
             </tr>
           {% else %}
             <tr>
-              <td colspan="{{ model_view._list_prop_names | length + 2 }}" class="text-center py-4">
+              <td colspan="{{ pagination.columns | length + 2 }}" class="text-center py-4">
                 No items found
               </td>
             </tr>
@@ -359,8 +361,9 @@
         </button>
         <div class="dropdown-menu">
           {% for page_size_option in model_view.page_size_options %}
+            {% set new_page = ((pagination.page - 1) * pagination.page_size // page_size_option) + 1 %}
             <a class="dropdown-item"
-               hx-get="{{ request.url.include_query_params(pageSize=page_size_option, page=pagination.resize(page_size_option).page) | escape }}"
+               hx-get="{{ request.url.include_query_params(pageSize=page_size_option, page=new_page) | escape }}"
                hx-target="#main-container"
                hx-push-url="true">
               {{ page_size_option }} / Page
